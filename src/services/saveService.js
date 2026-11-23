@@ -3,6 +3,19 @@ import { getSupabase, isSupabaseConfigured } from './supabaseClient.js';
 const LOCAL_SAVE_KEY = 'palevest_local_save';
 const GUEST_SESSION_KEY = 'palevest_guest_session';
 
+function sanitizeField(val, fallback = 'Petani', maxLen = 40) {
+  if (typeof val !== 'string') return fallback;
+  const cleaned = val.replace(/[<>]/g, '').trim().slice(0, maxLen);
+  return cleaned || fallback;
+}
+
+function getScopedSaveKey() {
+  if (currentSupabaseUser && currentSupabaseUser.id) {
+    return `${LOCAL_SAVE_KEY}_${currentSupabaseUser.id}`;
+  }
+  return `${LOCAL_SAVE_KEY}_guest`;
+}
+
 let currentSupabaseUser = null;
 let authSubscription = null;
 const authSubscribers = new Set();
@@ -48,7 +61,7 @@ function writeGuestSession(guestData) {
 function readLocalSaveRaw() {
   if (typeof window === 'undefined' || !window.localStorage) return null;
   try {
-    const raw = window.localStorage.getItem(LOCAL_SAVE_KEY);
+    const raw = window.localStorage.getItem(getScopedSaveKey());
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -59,9 +72,19 @@ function readLocalSaveRaw() {
 function writeLocalSaveRaw(payload) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
-    window.localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(payload));
+    window.localStorage.setItem(getScopedSaveKey(), JSON.stringify(payload));
   } catch {
     // Abaikan jika kuota penyimpanan penuh
+  }
+}
+
+function clearScopedLocalSave() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    window.localStorage.removeItem(getScopedSaveKey());
+    window.localStorage.removeItem(LOCAL_SAVE_KEY);
+  } catch {
+    // Abaikan
   }
 }
 
@@ -182,9 +205,8 @@ export async function initAuthListener(onChange) {
 export async function signUpUser({ email, password, username, farmName }) {
   const cleanEmail = typeof email === 'string' ? email.trim() : '';
   const cleanPassword = typeof password === 'string' ? password : '';
-  const cleanUsername = typeof username === 'string' && username.trim() ? username.trim() : 'Petani';
-  const cleanFarmName =
-    typeof farmName === 'string' && farmName.trim() ? farmName.trim() : 'Kebun Lembah';
+  const cleanUsername = sanitizeField(username, 'Petani', 40);
+  const cleanFarmName = sanitizeField(farmName, 'Kebun Lembah', 40);
 
   if (!cleanEmail || !cleanEmail.includes('@')) {
     return {
@@ -410,9 +432,8 @@ export async function signInWithGoogle() {
 }
 
 export function startGuestSession({ username, farmName } = {}) {
-  const cleanUsername = typeof username === 'string' && username.trim() ? username.trim() : 'Petani';
-  const cleanFarmName =
-    typeof farmName === 'string' && farmName.trim() ? farmName.trim() : 'Kebun Lembah';
+  const cleanUsername = sanitizeField(username, 'Petani', 40);
+  const cleanFarmName = sanitizeField(farmName, 'Kebun Lembah', 40);
 
   writeGuestSession({
     username: cleanUsername,
@@ -468,6 +489,7 @@ export async function signOutUser() {
     }
   }
 
+  clearScopedLocalSave();
   currentSupabaseUser = null;
   writeGuestSession(null);
 

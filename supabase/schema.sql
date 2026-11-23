@@ -2,8 +2,8 @@
 create table if not exists public.player_saves (
   user_id uuid primary key references auth.users(id) on delete cascade,
   email text,
-  username text not null default 'Petani',
-  farm_name text not null default 'Kebun Lembah',
+  username text not null default 'Petani' constraint player_saves_username_len check (char_length(username) <= 40),
+  farm_name text not null default 'Kebun Lembah' constraint player_saves_farm_name_len check (char_length(farm_name) <= 40),
   day integer not null default 1,
   season text not null default 'Semi',
   gold integer not null default 500,
@@ -14,6 +14,7 @@ create table if not exists public.player_saves (
 );
 
 grant usage on schema public to anon, authenticated;
+revoke all on table public.player_saves from anon;
 grant select, insert, update, delete on table public.player_saves to authenticated;
 
 alter table public.player_saves enable row level security;

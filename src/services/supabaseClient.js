@@ -21,8 +21,8 @@ function readRuntimeConfig() {
       parsed &&
       typeof parsed.url === 'string' &&
       typeof parsed.anonKey === 'string' &&
-      parsed.url.trim().startsWith('http') &&
-      parsed.anonKey.trim().length > 10
+      parsed.url.trim().startsWith('https://') &&
+      parsed.anonKey.trim().length > 20
     ) {
       return {
         url: parsed.url.trim(),
@@ -48,7 +48,7 @@ function readEnvConfig() {
     url.includes('example.supabase.co') ||
     anonKey.includes('your-anon-key');
 
-  if (!isPlaceholder && url.startsWith('http') && anonKey.length > 10) {
+  if (!isPlaceholder && url.startsWith('https://') && anonKey.length > 20) {
     return { url, anonKey };
   }
   return null;

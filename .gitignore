@@ -1,8 +1,35 @@
-node_modules
-dist
-.env
-.env.local
-.vercel
-*.log
+# Dependencies
+node_modules/
 
-.vercel
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Environment & Secrets (NEVER commit credentials)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# Cloud & MCP local configs
+.vercel/
+.supabase/
+.mcp.json
+.agent/
+.agents/
+skills-lock.json
+
+# Logs & OS artifacts
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
